@@ -19,6 +19,7 @@ package org.apache.spark.storage
 
 import java.io._
 import java.nio.{ByteBuffer, MappedByteBuffer}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.concurrent.{ExecutionContext, Await, Future}
@@ -156,6 +157,12 @@ private[spark] class BlockManager(
    * loaded yet. */
   private lazy val compressionCodec: CompressionCodec = CompressionCodec.createCodec(conf)
 
+  private val numBlocksRequested = new AtomicInteger(0)
+  private val numBlocksFoundInMemory = new AtomicInteger(0)
+  private val numMissesInMemory = new AtomicInteger(0)
+  private val numBlocksFoundInExternalStore = new AtomicInteger(0)
+  private val numBlocksFoundOnDisk = new AtomicInteger(0)
+
   /**
    * Construct a BlockManager with a memory limit set based on system properties.
    */
@@ -202,6 +209,7 @@ private[spark] class BlockManager(
     if (externalShuffleServiceEnabled && !blockManagerId.isDriver) {
       registerWithExternalShuffleServer()
     }
+    logInfo("********* BlockManager initialized")
   }
 
   private def registerWithExternalShuffleServer() {
@@ -456,6 +464,9 @@ private[spark] class BlockManager(
         // Note that this only checks metadata tracking. If user intentionally deleted the block
         // on disk or from off heap storage without using removeBlock, this conditional check will
         // still pass but eventually we will get an exception because we can't find the block.
+
+        numBlocksRequested.incrementAndGet()
+
         if (blockInfo.get(blockId).isEmpty) {
           logWarning(s"Block $blockId had been removed")
           return None
@@ -481,8 +492,10 @@ private[spark] class BlockManager(
           }
           result match {
             case Some(values) =>
+              numBlocksFoundInMemory.incrementAndGet()
               return result
             case None =>
+              numMissesInMemory.incrementAndGet()
               logDebug(s"Block $blockId not found in memory")
           }
         }
@@ -499,6 +512,7 @@ private[spark] class BlockManager(
             }
             result match {
               case Some(values) =>
+                numBlocksFoundInExternalStore.incrementAndGet()
                 return result
               case None =>
                 logDebug(s"Block $blockId not found in ExternalBlockStore")
@@ -510,7 +524,9 @@ private[spark] class BlockManager(
         if (level.useDisk) {
           logDebug(s"Getting block $blockId from disk")
           val bytes: ByteBuffer = diskStore.getBytes(blockId) match {
-            case Some(b) => b
+            case Some(b) => 
+              numBlocksFoundOnDisk.incrementAndGet()
+              b
             case None =>
               throw new BlockException(
                 blockId, s"Block $blockId not found on disk, though it should be")
@@ -1241,6 +1257,11 @@ private[spark] class BlockManager(
     metadataCleaner.cancel()
     broadcastCleaner.cancel()
     futureExecutionContext.shutdownNow()
+    logInfo(s"Number of blocks requested: ${numBlocksRequested.get()}")
+    logInfo(s"Number of blocks found in memory: ${numBlocksFoundInMemory.get()}")
+    logInfo(s"Number of blocks NOT found in memory: ${numMissesInMemory.get()}")
+    logInfo(s"Number of blocks found in external store: ${numBlocksFoundInExternalStore.get()}")
+    logInfo(s"Number of blocks found on disk: ${numBlocksFoundOnDisk.get()}")
     logInfo("BlockManager stopped")
   }
 }
