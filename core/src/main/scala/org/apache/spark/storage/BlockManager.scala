@@ -157,11 +157,14 @@ private[spark] class BlockManager(
    * loaded yet. */
   private lazy val compressionCodec: CompressionCodec = CompressionCodec.createCodec(conf)
 
-  private val numBlocksRequested = new AtomicInteger(0)
-  private val numBlocksFoundInMemory = new AtomicInteger(0)
-  private val numMissesInMemory = new AtomicInteger(0)
-  private val numBlocksFoundInExternalStore = new AtomicInteger(0)
-  private val numBlocksFoundOnDisk = new AtomicInteger(0)
+  private val blocksRequested = new AtomicInteger(0)
+  private val blocksFoundInMemory = new AtomicInteger(0)
+  private val missesInMemory = new AtomicInteger(0)
+  private val blocksFoundInExternalStore = new AtomicInteger(0)
+  private val blocksFoundOnDisk = new AtomicInteger(0)
+
+  private val blocksDroppedFromMemory = new AtomicInteger(0)
+  private val blocksDroppedToDisk = new AtomicInteger(0)
 
   /**
    * Construct a BlockManager with a memory limit set based on system properties.
@@ -465,7 +468,7 @@ private[spark] class BlockManager(
         // on disk or from off heap storage without using removeBlock, this conditional check will
         // still pass but eventually we will get an exception because we can't find the block.
 
-        numBlocksRequested.incrementAndGet()
+        blocksRequested.incrementAndGet()
 
         if (blockInfo.get(blockId).isEmpty) {
           logWarning(s"Block $blockId had been removed")
@@ -492,10 +495,10 @@ private[spark] class BlockManager(
           }
           result match {
             case Some(values) =>
-              numBlocksFoundInMemory.incrementAndGet()
+              blocksFoundInMemory.incrementAndGet()
               return result
             case None =>
-              numMissesInMemory.incrementAndGet()
+              missesInMemory.incrementAndGet()
               logDebug(s"Block $blockId not found in memory")
           }
         }
@@ -512,7 +515,7 @@ private[spark] class BlockManager(
             }
             result match {
               case Some(values) =>
-                numBlocksFoundInExternalStore.incrementAndGet()
+                blocksFoundInExternalStore.incrementAndGet()
                 return result
               case None =>
                 logDebug(s"Block $blockId not found in ExternalBlockStore")
@@ -525,7 +528,7 @@ private[spark] class BlockManager(
           logDebug(s"Getting block $blockId from disk")
           val bytes: ByteBuffer = diskStore.getBytes(blockId) match {
             case Some(b) => 
-              numBlocksFoundOnDisk.incrementAndGet()
+              blocksFoundOnDisk.incrementAndGet()
               b
             case None =>
               throw new BlockException(
@@ -1052,6 +1055,7 @@ private[spark] class BlockManager(
         // Drop to disk, if storage level requires
         if (level.useDisk && !diskStore.contains(blockId)) {
           logInfo(s"Writing block $blockId to disk")
+          blocksDroppedToDisk.incrementAndGet()
           data() match {
             case Left(elements) =>
               diskStore.putArray(blockId, elements, level, returnValues = false)
@@ -1067,6 +1071,7 @@ private[spark] class BlockManager(
         val blockIsRemoved = memoryStore.remove(blockId)
         if (blockIsRemoved) {
           blockIsUpdated = true
+          blocksDroppedFromMemory.incrementAndGet()
         } else {
           logWarning(s"Block $blockId could not be dropped from memory as it does not exist")
         }
@@ -1257,11 +1262,13 @@ private[spark] class BlockManager(
     metadataCleaner.cancel()
     broadcastCleaner.cancel()
     futureExecutionContext.shutdownNow()
-    logInfo(s"Number of blocks requested: ${numBlocksRequested.get()}")
-    logInfo(s"Number of blocks found in memory: ${numBlocksFoundInMemory.get()}")
-    logInfo(s"Number of blocks NOT found in memory: ${numMissesInMemory.get()}")
-    logInfo(s"Number of blocks found in external store: ${numBlocksFoundInExternalStore.get()}")
-    logInfo(s"Number of blocks found on disk: ${numBlocksFoundOnDisk.get()}")
+    logInfo(s"Number of blocks requested: ${blocksRequested.get()}")
+    logInfo(s"Number of blocks found in memory: ${blocksFoundInMemory.get()}")
+    logInfo(s"Number of blocks NOT found in memory: ${missesInMemory.get()}")
+    logInfo(s"Number of blocks found in external store: ${blocksFoundInExternalStore.get()}")
+    logInfo(s"Number of blocks found on disk: ${blocksFoundOnDisk.get()}")
+    logInfo(s"Number of blocks dropped from memory: ${blocksDroppedFromMemory.get()}")
+    logInfo(s"Number of blocks dropped to disk: ${blocksDroppedToDisk.get()}")
     logInfo("BlockManager stopped")
   }
 }
