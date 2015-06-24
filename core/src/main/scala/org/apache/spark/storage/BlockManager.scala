@@ -166,6 +166,17 @@ private[spark] class BlockManager(
   private val blocksDroppedFromMemory = new AtomicInteger(0)
   private val blocksDroppedToDisk = new AtomicInteger(0)
 
+  def getBlocksRequested = blocksRequested.get() 
+  def getBlocksFoundInMemory = blocksFoundInMemory.get()
+  def getMissesInMemory = missesInMemory.get()
+  def getBlocksFoundInExternalStore = blocksFoundInExternalStore.get()
+  def getBlocksFoundOnDisk = blocksFoundOnDisk.get()
+
+  def getBlocksDroppedFromMemory = blocksDroppedFromMemory.get()
+  def getBlocksDroppedToDisk = blocksDroppedToDisk.get()
+
+  def getBlocksNotAttempted = memoryStore.getBlocksNotAttempted
+
   /**
    * Construct a BlockManager with a memory limit set based on system properties.
    */
@@ -1262,13 +1273,14 @@ private[spark] class BlockManager(
     metadataCleaner.cancel()
     broadcastCleaner.cancel()
     futureExecutionContext.shutdownNow()
-    logInfo(s"Number of blocks requested: ${blocksRequested.get()}")
-    logInfo(s"Number of blocks found in memory: ${blocksFoundInMemory.get()}")
-    logInfo(s"Number of blocks NOT found in memory: ${missesInMemory.get()}")
-    logInfo(s"Number of blocks found in external store: ${blocksFoundInExternalStore.get()}")
-    logInfo(s"Number of blocks found on disk: ${blocksFoundOnDisk.get()}")
-    logInfo(s"Number of blocks dropped from memory: ${blocksDroppedFromMemory.get()}")
-    logInfo(s"Number of blocks dropped to disk: ${blocksDroppedToDisk.get()}")
+    logInfo(s"Number of blocks requested: ${getBlocksRequested}")
+    logInfo(s"Number of blocks found in memory: ${getBlocksFoundInMemory}")
+    logInfo(s"Number of blocks NOT found in memory: ${getMissesInMemory}")
+    logInfo(s"Number of blocks found in external store: ${getBlocksFoundInExternalStore}")
+    logInfo(s"Number of blocks found on disk: ${getBlocksFoundOnDisk}")
+    logInfo(s"Number of blocks dropped from memory: ${getBlocksDroppedFromMemory}")
+    logInfo(s"Number of blocks dropped to disk: ${getBlocksDroppedToDisk}")
+    logInfo(s"Number of blocks not attempted : ${getBlocksNotAttempted}")
     logInfo("BlockManager stopped")
   }
 }

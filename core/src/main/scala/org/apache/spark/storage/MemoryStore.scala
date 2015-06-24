@@ -19,6 +19,7 @@ package org.apache.spark.storage
 
 import java.nio.ByteBuffer
 import java.util.LinkedHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -67,6 +68,10 @@ private[spark] class MemoryStore(blockManager: BlockManager, maxMemory: Long)
   // Initial memory to request before unrolling any block
   private val unrollMemoryThreshold: Long =
     conf.getLong("spark.storage.unrollMemoryThreshold", 1024 * 1024)
+
+  private val blocksNotAttempted = new AtomicInteger(0)
+
+  def getBlocksNotAttempted = blocksNotAttempted.get()
 
   if (maxMemory < unrollMemoryThreshold) {
     logWarning(s"Max memory ${Utils.bytesToString(maxMemory)} is less than the initial memory " +
@@ -472,6 +477,7 @@ private[spark] class MemoryStore(blockManager: BlockManager, maxMemory: Long)
       } else {
         logInfo(s"Will not store $blockIdToAdd as it would require dropping another block " +
           "from the same RDD")
+        blocksNotAttempted.incrementAndGet()
         return ResultWithDroppedBlocks(success = false, droppedBlocks)
       }
     }

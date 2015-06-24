@@ -57,4 +57,52 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
       diskSpaceUsed / 1024 / 1024
     }
   })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "requested"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksRequested
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundInMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksFoundInMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "missesInMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getMissesInMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundInExternalStore"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksFoundInExternalStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundOnDisk"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksFoundOnDisk
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "droppedFromMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksDroppedFromMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "droppedToDisk"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksDroppedToDisk
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "notAttempted"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksNotAttempted
+    }
+  })
 }

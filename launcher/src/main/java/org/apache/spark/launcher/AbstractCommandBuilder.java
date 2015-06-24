@@ -90,6 +90,8 @@ abstract class AbstractCommandBuilder {
 
     if (javaHome != null) {
       cmd.add(join(File.separator, javaHome, "bin", "java"));
+    } else if ((envJavaHome = System.getenv("JAVA_BIN")) != null) {
+      cmd.add(join(File.separator, envJavaHome));
     } else if ((envJavaHome = System.getenv("JAVA_HOME")) != null) {
         cmd.add(join(File.separator, envJavaHome, "bin", "java"));
     } else {
