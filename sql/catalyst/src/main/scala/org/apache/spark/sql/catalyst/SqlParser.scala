@@ -40,7 +40,7 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
 
   def parseExpression(input: String): Expression = {
     // Initialize the Keywords.
-    lexical.initialize(reservedWords)
+    initLexical
     phrase(projection)(new lexical.Scanner(input)) match {
       case Success(plan, _) => plan
       case failureOrError => sys.error(failureOrError.toString)
@@ -99,13 +99,6 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
   protected val WHERE = Keyword("WHERE")
   protected val WITH = Keyword("WITH")
 
-  protected def assignAliases(exprs: Seq[Expression]): Seq[NamedExpression] = {
-    exprs.zipWithIndex.map {
-      case (ne: NamedExpression, _) => ne
-      case (e, i) => Alias(e, s"c$i")()
-    }
-  }
-
   protected lazy val start: Parser[LogicalPlan] =
     start1 | insert | cte
 
@@ -130,8 +123,8 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
           val base = r.getOrElse(OneRowRelation)
           val withFilter = f.map(Filter(_, base)).getOrElse(base)
           val withProjection = g
-            .map(Aggregate(_, assignAliases(p), withFilter))
-            .getOrElse(Project(assignAliases(p), withFilter))
+            .map(Aggregate(_, p.map(UnresolvedAlias(_)), withFilter))
+            .getOrElse(Project(p.map(UnresolvedAlias(_)), withFilter))
           val withDistinct = d.map(_ => Distinct(withProjection)).getOrElse(withProjection)
           val withHaving = h.map(Filter(_, withDistinct)).getOrElse(withDistinct)
           val withOrder = o.map(_(withHaving)).getOrElse(withHaving)
@@ -294,15 +287,18 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
           throw new AnalysisException(s"invalid function approximate($floatLit) $udfName")
         }
       }
-    | CASE ~> expression.? ~ rep1(WHEN ~> expression ~ (THEN ~> expression)) ~
-        (ELSE ~> expression).? <~ END ^^ {
-          case casePart ~ altPart ~ elsePart =>
-            val branches = altPart.flatMap { case whenExpr ~ thenExpr =>
-              Seq(whenExpr, thenExpr)
-            } ++ elsePart
-            casePart.map(CaseKeyWhen(_, branches)).getOrElse(CaseWhen(branches))
-        }
-      )
+    | CASE ~> whenThenElse ^^ CaseWhen
+    | CASE ~> expression ~ whenThenElse ^^
+      { case keyPart ~ branches => CaseKeyWhen(keyPart, branches) }
+    )
+
+  protected lazy val whenThenElse: Parser[List[Expression]] =
+    rep1(WHEN ~> expression ~ (THEN ~> expression)) ~ (ELSE ~> expression).? <~ END ^^ {
+      case altPart ~ elsePart =>
+        altPart.flatMap { case whenExpr ~ thenExpr =>
+          Seq(whenExpr, thenExpr)
+        } ++ elsePart
+    }
 
   protected lazy val cast: Parser[Expression] =
     CAST ~ "(" ~> expression ~ (AS ~> dataType) <~ ")" ^^ {
@@ -361,6 +357,11 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
   protected lazy val signedPrimary: Parser[Expression] =
     sign ~ primary ^^ { case s ~ e => if (s == "-") UnaryMinus(e) else e}
 
+  protected lazy val attributeName: Parser[String] = acceptMatch("attribute name", {
+    case lexical.Identifier(str) => str
+    case lexical.Keyword(str) if !lexical.delimiters.contains(str) => str
+  })
+
   protected lazy val primary: PackratParser[Expression] =
     ( literal
     | expression ~ ("[" ~> expression <~ "]") ^^
@@ -371,9 +372,9 @@ class SqlParser extends AbstractSparkSQLParser with DataTypeParser {
     | "(" ~> expression <~ ")"
     | function
     | dotExpressionHeader
-    | ident ^^ {case i => UnresolvedAttribute.quoted(i)}
     | signedPrimary
     | "~" ~> expression ^^ BitwiseNot
+    | attributeName ^^ UnresolvedAttribute.quoted
     )
 
   protected lazy val dotExpressionHeader: Parser[Expression] =
