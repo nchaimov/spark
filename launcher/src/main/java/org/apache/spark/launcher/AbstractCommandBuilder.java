@@ -99,6 +99,13 @@ abstract class AbstractCommandBuilder {
     }
 
     // Load extra JAVA_OPTS from conf/java-opts, if it exists.
+    //
+
+    String envJavaOpts;
+    if((envJavaOpts = System.getenv("JAVA_OPTS")) != null) {
+      cmd.add(envJavaOpts);
+    }
+
     File javaOpts = new File(join(File.separator, getConfDir(), "java-opts"));
     if (javaOpts.isFile()) {
       BufferedReader br = new BufferedReader(new InputStreamReader(
