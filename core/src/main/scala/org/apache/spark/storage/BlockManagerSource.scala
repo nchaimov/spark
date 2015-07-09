@@ -126,6 +126,10 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
     }
   })
 
-
+  metricRegistry.register(MetricRegistry.name("fs", "metadataTime"), new Gauge[Long] {
+    override def getValue: Long = {
+      FileSystem.getAllStatistics().get(0).getMetadataTime()  
+    }
+  })
 
 }
