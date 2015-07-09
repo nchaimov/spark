@@ -21,6 +21,8 @@ import com.codahale.metrics.{Gauge, MetricRegistry}
 
 import org.apache.spark.metrics.source.Source
 
+import org.apache.hadoop.fs.FileSystem
+
 private[spark] class BlockManagerSource(val blockManager: BlockManager)
     extends Source {
   override val metricRegistry = new MetricRegistry()
@@ -105,4 +107,25 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
       blockManager.getBlocksNotAttempted
     }
   })
+
+  metricRegistry.register(MetricRegistry.name("fs", "fileOpenOps"), new Gauge[Long] {
+    override def getValue: Long = {
+      FileSystem.getAllStatistics().get(0).getFileOpenOps()  
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("fs", "fileCloseOps"), new Gauge[Long] {
+    override def getValue: Long = {
+      FileSystem.getAllStatistics().get(0).getFileCloseOps()  
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("fs", "seekOps"), new Gauge[Long] {
+    override def getValue: Long = {
+      FileSystem.getAllStatistics().get(0).getSeekOps()  
+    }
+  })
+
+
+
 }
