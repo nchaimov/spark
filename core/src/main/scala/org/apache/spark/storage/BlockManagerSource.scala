@@ -108,28 +108,4 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
     }
   })
 
-  metricRegistry.register(MetricRegistry.name("fs", "fileOpenOps"), new Gauge[Long] {
-    override def getValue: Long = {
-      FileSystem.getAllStatistics().get(0).getFileOpenOps()  
-    }
-  })
-
-  metricRegistry.register(MetricRegistry.name("fs", "fileCloseOps"), new Gauge[Long] {
-    override def getValue: Long = {
-      FileSystem.getAllStatistics().get(0).getFileCloseOps()  
-    }
-  })
-
-  metricRegistry.register(MetricRegistry.name("fs", "seekOps"), new Gauge[Long] {
-    override def getValue: Long = {
-      FileSystem.getAllStatistics().get(0).getSeekOps()  
-    }
-  })
-
-  metricRegistry.register(MetricRegistry.name("fs", "metadataTime"), new Gauge[Long] {
-    override def getValue: Long = {
-      FileSystem.getAllStatistics().get(0).getMetadataTime()  
-    }
-  })
-
 }
