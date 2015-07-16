@@ -71,5 +71,9 @@ class ExecutorSource(threadPool: ThreadPoolExecutor, executorId: String) extends
     registerFileSystemStat(scheme, "read_ops", _.getReadOps(), 0)
     registerFileSystemStat(scheme, "largeRead_ops", _.getLargeReadOps(), 0)
     registerFileSystemStat(scheme, "write_ops", _.getWriteOps(), 0)
+    registerFileSystemStat(scheme, "file_open_ops", _.getFileOpenOps(), 0)
+    registerFileSystemStat(scheme, "file_close_ops", _.getFileCloseOps(), 0)
+    registerFileSystemStat(scheme, "seek_ops", _.getSeekOps(), 0)
+    registerFileSystemStat(scheme, "metadata_time", _.getMetadataTime(), 0L)
   }
 }
