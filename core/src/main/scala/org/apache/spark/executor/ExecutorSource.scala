@@ -24,6 +24,7 @@ import scala.collection.JavaConversions._
 import com.codahale.metrics.{Gauge, MetricRegistry}
 import org.apache.hadoop.fs.FileSystem
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.metrics.source.Source
 
 private[spark]
@@ -76,4 +77,54 @@ class ExecutorSource(threadPool: ThreadPoolExecutor, executorId: String) extends
     registerFileSystemStat(scheme, "seek_ops", _.getSeekOps(), 0)
     registerFileSystemStat(scheme, "metadata_time", _.getMetadataTime(), 0L)
   }
+
+  metricRegistry.register(MetricRegistry.name("blocks", "requested"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksRequested
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundInMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksFoundInMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "missesInMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getMissesInMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundInExternalStore"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksFoundInExternalStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "foundOnDisk"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksFoundOnDisk
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "droppedFromMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksDroppedFromMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "droppedToDisk"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksDroppedToDisk
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blocks", "notAttempted"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksNotAttempted
+    }
+  })
+
+
 }

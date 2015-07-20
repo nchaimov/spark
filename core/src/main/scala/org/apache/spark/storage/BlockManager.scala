@@ -177,6 +177,30 @@ private[spark] class BlockManager(
 
   def getBlocksNotAttempted = memoryStore.getBlocksNotAttempted
 
+  def getMaxMem = {
+      val storageStatusList = master.getStorageStatus
+      val maxMem = storageStatusList.map(_.maxMem).sum
+      maxMem / 1024 / 1024
+  }
+
+  def getRemainingMem = {
+      val storageStatusList = master.getStorageStatus
+      val remainingMem = storageStatusList.map(_.memRemaining).sum
+      remainingMem / 1024 / 1024
+  }
+
+  def getUsedMem = {
+      val storageStatusList = master.getStorageStatus
+      val memUsed = storageStatusList.map(_.memUsed).sum
+      memUsed / 1024 / 1024
+  }
+
+  def getDiskSpaceUsed = {
+      val storageStatusList = master.getStorageStatus
+      val diskSpaceUsed = storageStatusList.map(_.diskUsed).sum
+      diskSpaceUsed / 1024 / 1024
+  }
+
   /**
    * Construct a BlockManager with a memory limit set based on system properties.
    */
