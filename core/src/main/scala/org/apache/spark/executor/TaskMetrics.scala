@@ -23,6 +23,8 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.executor.DataReadMethod.DataReadMethod
 import org.apache.spark.storage.{BlockId, BlockStatus}
 
+import org.apache.spark.SparkEnv
+
 /**
  * :: DeveloperApi ::
  * Metrics tracked during the execution of a task.
@@ -379,8 +381,15 @@ class ShuffleWriteMetrics extends Serializable {
    */
   @volatile private var _shuffleBytesWritten: Long = _
   def shuffleBytesWritten: Long = _shuffleBytesWritten
-  private[spark] def incShuffleBytesWritten(value: Long) = _shuffleBytesWritten += value
-  private[spark] def decShuffleBytesWritten(value: Long) = _shuffleBytesWritten -= value
+  private[spark] def incShuffleBytesWritten(value: Long) = {
+    SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(value)
+    _shuffleBytesWritten += value
+  }
+
+  private[spark] def decShuffleBytesWritten(value: Long) = {
+    SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(-value)
+    _shuffleBytesWritten -= value
+  }
 
   /**
    * Time the task spent blocking on writes to disk or buffer cache, in nanoseconds

@@ -83,6 +83,8 @@ object PageRank extends Logging {
     runWithOptions(graph, numIter, resetProb)
   }
 
+  var currentIteration = -1
+
   /**
    * Run PageRank for a fixed number of iterations returning a graph
    * with vertex attributes containing the PageRank and edge
@@ -121,6 +123,7 @@ object PageRank extends Logging {
     var iteration = 0
     var prevRankGraph: Graph[Double, Double] = null
     while (iteration < numIter) {
+      currentIteration = iteration
       rankGraph.cache()
 
       // Compute the outgoing rank contributions of each vertex, perform local preaggregation, and

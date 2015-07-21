@@ -20,6 +20,7 @@ package org.apache.spark.storage
 import java.io.{IOException, File, FileOutputStream, RandomAccessFile}
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel.MapMode
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import org.apache.spark.Logging
 import org.apache.spark.serializer.Serializer
@@ -32,6 +33,12 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
   extends BlockStore(blockManager) with Logging {
 
   val minMemoryMapBytes = blockManager.conf.getSizeAsBytes("spark.storage.memoryMapThreshold", "2m")
+  
+  private val bytesPut = new AtomicLong(0L)
+  private val bytesRetrieved = new AtomicLong(0L)
+
+  def getBytesPut = bytesPut.get()
+  def getBytesRetrieved = bytesRetrieved.get()
 
   override def getSize(blockId: BlockId): Long = {
     diskManager.getFile(blockId.name).length
@@ -53,6 +60,7 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
       channel.close()
     }
     val finishTime = System.currentTimeMillis
+    bytesPut.addAndGet(bytes.limit)
     logDebug("Block %s stored as %s file on disk in %d ms".format(
       file.getName, Utils.bytesToString(bytes.limit), finishTime - startTime))
     PutResult(bytes.limit(), Right(bytes.duplicate()))
@@ -92,6 +100,7 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
     }
 
     val length = file.length
+    bytesPut.addAndGet(length)
 
     val timeTaken = System.currentTimeMillis - startTime
     logDebug("Block %s stored as %s file on disk in %d ms".format(
@@ -120,8 +129,10 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
           }
         }
         buf.flip()
+        bytesRetrieved.addAndGet(length)
         Some(buf)
       } else {
+        bytesRetrieved.addAndGet(length)
         Some(channel.map(MapMode.READ_ONLY, offset, length))
       }
     } {

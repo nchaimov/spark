@@ -19,7 +19,7 @@ package org.apache.spark.storage
 
 import java.nio.ByteBuffer
 import java.util.LinkedHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -70,8 +70,12 @@ private[spark] class MemoryStore(blockManager: BlockManager, maxMemory: Long)
     conf.getLong("spark.storage.unrollMemoryThreshold", 1024 * 1024)
 
   private val blocksNotAttempted = new AtomicInteger(0)
+  private val bytesPut = new AtomicLong(0L)
+  private val bytesRetrieved = new AtomicLong(0L)
 
   def getBlocksNotAttempted = blocksNotAttempted.get()
+  def getBytesPut = bytesPut.get()
+  def getBytesRetrieved = bytesRetrieved.get()
 
   if (maxMemory < unrollMemoryThreshold) {
     logWarning(s"Max memory ${Utils.bytesToString(maxMemory)} is less than the initial memory " +
@@ -385,6 +389,7 @@ private[spark] class MemoryStore(blockManager: BlockManager, maxMemory: Long)
         entries.synchronized {
           entries.put(blockId, entry)
           currentMemory += size
+          bytesPut.addAndGet(size)
         }
         val valuesOrBytes = if (deserialized) "values" else "bytes"
         logInfo("Block %s stored as %s in memory (estimated size %s, free %s)".format(

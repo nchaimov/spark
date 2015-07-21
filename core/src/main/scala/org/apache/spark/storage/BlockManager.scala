@@ -19,7 +19,7 @@ package org.apache.spark.storage
 
 import java.io._
 import java.nio.{ByteBuffer, MappedByteBuffer}
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.concurrent.{ExecutionContext, Await, Future}
@@ -165,6 +165,15 @@ private[spark] class BlockManager(
 
   private val blocksDroppedFromMemory = new AtomicInteger(0)
   private val blocksDroppedToDisk = new AtomicInteger(0)
+  private val blocksRemoved = new AtomicInteger(0)
+
+  private val blockObjectWriterOpenOps = new AtomicInteger(0)
+  private val blockObjectWriterBytesWritten = new AtomicLong(0L)
+
+  private val shuffleBlockBytesRetrieved = new AtomicLong(0L)
+
+  private val shuffleCleanOps = new AtomicInteger(0)
+
 
   def getBlocksRequested = blocksRequested.get() 
   def getBlocksFoundInMemory = blocksFoundInMemory.get()
@@ -174,8 +183,25 @@ private[spark] class BlockManager(
 
   def getBlocksDroppedFromMemory = blocksDroppedFromMemory.get()
   def getBlocksDroppedToDisk = blocksDroppedToDisk.get()
+  def getBlocksRemoved = blocksRemoved.get()
 
   def getBlocksNotAttempted = memoryStore.getBlocksNotAttempted
+  def getBytesPutInMemoryStore = memoryStore.getBytesPut
+  def getBytesRetrievedFromMemoryStore = memoryStore.getBytesRetrieved
+  def getBytesPutInDiskStore = diskStore.getBytesPut
+  def getBytesRetrievedFromDiskStore = diskStore.getBytesRetrieved
+
+  def getBlockObjectWriterBytesWritten = blockObjectWriterBytesWritten.get()
+  def getBlockObjectWriterOpenOps = blockObjectWriterOpenOps.get()
+  def addBlockObjectWriterBytesWritten(x : Long) = blockObjectWriterBytesWritten.addAndGet(x)
+  def incBlockObjectWriterOpenOps = blockObjectWriterOpenOps.incrementAndGet()
+
+  def getShuffleBlockBytesRetrieved = shuffleBlockBytesRetrieved.get()
+
+  def getShuffleCleanOps = shuffleCleanOps.get()
+  def incShuffleCleanOps = shuffleCleanOps.incrementAndGet()
+
+  
 
   def getMaxMem = {
       val storageStatusList = master.getStorageStatus
@@ -343,7 +369,9 @@ private[spark] class BlockManager(
    */
   override def getBlockData(blockId: BlockId): ManagedBuffer = {
     if (blockId.isShuffle) {
-      shuffleManager.shuffleBlockResolver.getBlockData(blockId.asInstanceOf[ShuffleBlockId])
+      val mb = shuffleManager.shuffleBlockResolver.getBlockData(blockId.asInstanceOf[ShuffleBlockId])
+      shuffleBlockBytesRetrieved.addAndGet(mb.size)
+      mb
     } else {
       val blockBytesOpt = doGetLocal(blockId, asBlockResult = false)
         .asInstanceOf[Option[ByteBuffer]]
@@ -1169,6 +1197,7 @@ private[spark] class BlockManager(
             "the disk, memory, or external block store")
         }
         blockInfo.remove(blockId)
+        blocksRemoved.incrementAndGet()
         if (tellMaster && info.tellMaster) {
           val status = getCurrentBlockStatus(blockId, info)
           reportBlockStatus(blockId, info, status)
@@ -1304,6 +1333,7 @@ private[spark] class BlockManager(
     logInfo(s"Number of blocks found on disk: ${getBlocksFoundOnDisk}")
     logInfo(s"Number of blocks dropped from memory: ${getBlocksDroppedFromMemory}")
     logInfo(s"Number of blocks dropped to disk: ${getBlocksDroppedToDisk}")
+    logInfo(s"Number of blocks removed : ${getBlocksRemoved}")
     logInfo(s"Number of blocks not attempted : ${getBlocksNotAttempted}")
     logInfo("BlockManager stopped")
   }

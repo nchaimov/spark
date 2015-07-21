@@ -201,7 +201,7 @@ private[spark] class MetricsSystem private (
   }
 }
 
-private[spark] object MetricsSystem {
+private[spark] object MetricsSystem extends Logging {
   val SINK_REGEX = "^sink\\.(.+)\\.(.+)".r
   val SOURCE_REGEX = "^source\\.(.+)\\.(.+)".r
 
@@ -211,8 +211,9 @@ private[spark] object MetricsSystem {
   def checkMinimalPollingPeriod(pollUnit: TimeUnit, pollPeriod: Int) {
     val period = MINIMAL_POLL_UNIT.convert(pollPeriod, pollUnit)
     if (period < MINIMAL_POLL_PERIOD) {
-      throw new IllegalArgumentException("Polling period " + pollPeriod + " " + pollUnit +
-        " below than minimal polling period ")
+      //throw new IllegalArgumentException("Polling period " + pollPeriod + " " + pollUnit +
+      //  " below than minimal polling period ")
+      logInfo("Polling period below minimal polling period")
     }
   }
 

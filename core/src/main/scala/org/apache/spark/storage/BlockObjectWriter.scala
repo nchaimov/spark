@@ -21,6 +21,7 @@ import java.io.{BufferedOutputStream, FileOutputStream, File, OutputStream}
 import java.nio.channels.FileChannel
 
 import org.apache.spark.Logging
+import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{SerializerInstance, SerializationStream}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.util.Utils
@@ -132,6 +133,7 @@ private[spark] class DiskBlockObjectWriter(
     bs = compressStream(new BufferedOutputStream(ts, bufferSize))
     objOut = serializerInstance.serializeStream(bs)
     initialized = true
+    SparkEnv.get.blockManager.incBlockObjectWriterOpenOps
     this
   }
 
@@ -171,6 +173,7 @@ private[spark] class DiskBlockObjectWriter(
       finalPosition = file.length()
       // In certain compression codecs, more bytes are written after close() is called
       writeMetrics.incShuffleBytesWritten(finalPosition - reportedPosition)
+      //SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(finalPosition - reportedPosition)
     } else {
       finalPosition = file.length()
     }
@@ -184,6 +187,7 @@ private[spark] class DiskBlockObjectWriter(
       if (initialized) {
         writeMetrics.decShuffleBytesWritten(reportedPosition - initialPosition)
         writeMetrics.decShuffleRecordsWritten(numRecordsWritten)
+        //SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(-(reportedPosition - initialPosition))
         objOut.flush()
         bs.flush()
         close()
@@ -245,6 +249,7 @@ private[spark] class DiskBlockObjectWriter(
   private def updateBytesWritten() {
     val pos = channel.position()
     writeMetrics.incShuffleBytesWritten(pos - reportedPosition)
+    //SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(pos - reportedPosition)
     reportedPosition = pos
   }
 

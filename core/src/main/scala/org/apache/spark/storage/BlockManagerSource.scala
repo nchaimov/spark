@@ -108,4 +108,52 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
     }
   })
 
+  metricRegistry.register(MetricRegistry.name("blocks", "removed"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlocksRemoved
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "bytesPut"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBytesPutInMemoryStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBytesRetrievedFromMemoryStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("diskStore", "bytesPut"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBytesPutInDiskStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("diskStore", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBytesRetrievedFromDiskStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blockObjectWriter", "bytesWritten"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getBlockObjectWriterBytesWritten
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("shuffleBlocks", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getShuffleBlockBytesRetrieved
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("shuffleBlocks", "cleanOps"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getShuffleCleanOps
+    }
+  })
+
 }
