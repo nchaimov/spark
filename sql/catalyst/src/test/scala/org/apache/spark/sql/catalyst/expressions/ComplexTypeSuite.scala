@@ -17,13 +17,11 @@
 
 package org.apache.spark.sql.catalyst.expressions
 
-import org.scalatest.exceptions.TestFailedException
-
 import org.apache.spark.SparkFunSuite
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnresolvedExtractValue
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
 
 class ComplexTypeSuite extends SparkFunSuite with ExpressionEvalHelper {
@@ -117,6 +115,22 @@ class ComplexTypeSuite extends SparkFunSuite with ExpressionEvalHelper {
 
     checkEvaluation(getArrayStructFields(arrayStruct, "a"), Seq(1))
     checkEvaluation(getArrayStructFields(nullArrayStruct, "a"), null)
+  }
+
+  test("CreateArray") {
+    val intSeq = Seq(5, 10, 15, 20, 25)
+    val longSeq = intSeq.map(_.toLong)
+    val strSeq = intSeq.map(_.toString)
+    checkEvaluation(CreateArray(intSeq.map(Literal(_))), intSeq, EmptyRow)
+    checkEvaluation(CreateArray(longSeq.map(Literal(_))), longSeq, EmptyRow)
+    checkEvaluation(CreateArray(strSeq.map(Literal(_))), strSeq, EmptyRow)
+
+    val intWithNull = intSeq.map(Literal(_)) :+ Literal.create(null, IntegerType)
+    val longWithNull = longSeq.map(Literal(_)) :+ Literal.create(null, LongType)
+    val strWithNull = strSeq.map(Literal(_)) :+ Literal.create(null, StringType)
+    checkEvaluation(CreateArray(intWithNull), intSeq :+ null, EmptyRow)
+    checkEvaluation(CreateArray(longWithNull), longSeq :+ null, EmptyRow)
+    checkEvaluation(CreateArray(strWithNull), strSeq :+ null, EmptyRow)
   }
 
   test("CreateStruct") {
