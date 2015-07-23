@@ -52,6 +52,7 @@ public final class LazyFileRegion extends AbstractReferenceCounted implements Fi
    * @param count number of bytes to transfer starting from position.
    */
   public LazyFileRegion(File file, long position, long count) {
+    System.err.println("***** >>>> LazyFileRegion constructed");
     this.file = file;
     this.position = position;
     this.count = count;
@@ -59,6 +60,7 @@ public final class LazyFileRegion extends AbstractReferenceCounted implements Fi
 
   @Override
   protected void deallocate() {
+    System.err.println("***** >>>> LazyFileRegion deallocated");
     JavaUtils.closeQuietly(channel);
   }
 

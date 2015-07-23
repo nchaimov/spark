@@ -25,6 +25,9 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Objects;
 import com.google.common.io.ByteStreams;
 import io.netty.channel.DefaultFileRegion;
@@ -42,11 +45,14 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
   private final long offset;
   private final long length;
 
+  private final Logger logger = LoggerFactory.getLogger(FileSegmentManagedBuffer.class);
+
   public FileSegmentManagedBuffer(TransportConf conf, File file, long offset, long length) {
     this.conf = conf;
     this.file = file;
     this.offset = offset;
     this.length = length;
+    //logger.info("***** >>>> FileSegmentManagedBuffer instantiated: {}", this.toString());
   }
 
   @Override
@@ -56,6 +62,7 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public ByteBuffer nioByteBuffer() throws IOException {
+    //logger.info("***** >>>> FileSegmentManagedBuffer nioByeBuffer: {}", this.toString());
     FileChannel channel = null;
     try {
       channel = new RandomAccessFile(file, "r").getChannel();
@@ -93,6 +100,7 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public InputStream createInputStream() throws IOException {
+    //logger.info("***** >>>> FileSegmentManagedBuffer createInputStream: {}", this.toString());
     FileInputStream is = null;
     try {
       is = new FileInputStream(file);
@@ -119,16 +127,19 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public ManagedBuffer retain() {
+    //logger.info("***** >>>> FileSegmentManagedBuffer retain: {}", file.toString());
     return this;
   }
 
   @Override
   public ManagedBuffer release() {
+    //logger.info("***** >>>> FileSegmentManagedBuffer release: {}", file.toString());
     return this;
   }
 
   @Override
   public Object convertToNetty() throws IOException {
+    //logger.info("***** >>>> FileSegmentManagedBuffer convertToNetty: {}", this.toString());
     if (conf.lazyFileDescriptor()) {
       return new LazyFileRegion(file, offset, length);
     } else {
