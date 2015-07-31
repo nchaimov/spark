@@ -22,6 +22,7 @@ import java.nio.{ByteBuffer, MappedByteBuffer}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.concurrent.duration._
 import scala.util.Random
@@ -52,6 +53,13 @@ private[spark] class BlockResult(
     val data: Iterator[Any],
     val readMethod: DataReadMethod.Value,
     val bytes: Long)
+
+private[spark] class RDDStats(
+    val partitionsComputed : AtomicLong) {
+
+  def this(partitionsComputed : Long) = this(new AtomicLong(partitionsComputed)) 
+
+}
 
 /**
  * Manager running on every node (driver and executors) which provides interfaces for putting and
@@ -174,6 +182,11 @@ private[spark] class BlockManager(
 
   private val shuffleCleanOps = new AtomicInteger(0)
 
+  private val cacheManagerPartitionsComputed = new AtomicLong(0L)
+  private val cacheManagerPartitionsFound = new AtomicLong(0L)
+
+  private val rddStats : TrieMap[Int, RDDStats] = new TrieMap()
+
 
   def getBlocksRequested = blocksRequested.get() 
   def getBlocksFoundInMemory = blocksFoundInMemory.get()
@@ -201,7 +214,13 @@ private[spark] class BlockManager(
   def getShuffleCleanOps = shuffleCleanOps.get()
   def incShuffleCleanOps = shuffleCleanOps.incrementAndGet()
 
+  def getCacheManagerPartitionsComputed = cacheManagerPartitionsComputed.get()
+  def incCacheManagerPartitionsComputed = cacheManagerPartitionsComputed.incrementAndGet()
+  def getCacheManagerPartitionsFound = cacheManagerPartitionsFound.get()
+  def incCacheManagerPartitionsFound = cacheManagerPartitionsFound.incrementAndGet()
   
+  def getRDDStats(id : Int) : RDDStats = rddStats.getOrElseUpdate(id, new RDDStats(0L))
+  def incPartitionsComputed(id : Int) = getRDDStats(id).partitionsComputed.incrementAndGet()
 
   def getMaxMem = {
       val storageStatusList = master.getStorageStatus

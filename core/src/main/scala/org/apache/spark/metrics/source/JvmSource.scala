@@ -18,7 +18,7 @@
 package org.apache.spark.metrics.source
 
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, MemoryUsageGaugeSet}
+import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, MemoryUsageGaugeSet, BufferPoolMetricSet, FileDescriptorRatioGauge}
 
 private[spark] class JvmSource extends Source {
   override val sourceName = "jvm"
@@ -26,4 +26,5 @@ private[spark] class JvmSource extends Source {
 
   metricRegistry.registerAll(new GarbageCollectorMetricSet)
   metricRegistry.registerAll(new MemoryUsageGaugeSet)
+
 }

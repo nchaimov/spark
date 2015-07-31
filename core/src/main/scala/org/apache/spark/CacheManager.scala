@@ -49,6 +49,7 @@ private[spark] class CacheManager(blockManager: BlockManager) extends Logging {
         existingMetrics.incBytesRead(blockResult.bytes)
 
         val iter = blockResult.data.asInstanceOf[Iterator[T]]
+        blockManager.incCacheManagerPartitionsFound
         new InterruptibleIterator[T](context, iter) {
           override def next(): T = {
             existingMetrics.incRecordsRead(1)
@@ -65,7 +66,12 @@ private[spark] class CacheManager(blockManager: BlockManager) extends Logging {
 
         // Otherwise, we have to load the partition ourselves
         try {
-          logInfo(s"Partition $key not found, computing it")
+          try {
+            logInfo(s"Partition $key not found, computing it: ${rdd.toDebugString}")
+          } catch {
+            case e: Exception => logInfo(s"Partition $key not found, computing it: ${rdd.toString}")
+          }
+          blockManager.incCacheManagerPartitionsComputed
           val computedValues = rdd.computeOrReadCheckpoint(partition, context)
 
           // If the task is running locally, do not persist the result

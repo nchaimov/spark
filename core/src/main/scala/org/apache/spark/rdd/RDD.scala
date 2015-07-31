@@ -18,6 +18,7 @@
 package org.apache.spark.rdd
 
 import java.util.Random
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.{mutable, Map}
 import scala.collection.mutable.ArrayBuffer
@@ -274,7 +275,12 @@ abstract class RDD[T: ClassTag](
    */
   private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
   {
-    if (isCheckpointed) firstParent[T].iterator(split, context) else compute(split, context)
+    if (isCheckpointed) {
+      firstParent[T].iterator(split, context)
+    } else { 
+      SparkEnv.get.blockManager.incPartitionsComputed(id)
+      compute(split, context)
+    }
   }
 
   /**

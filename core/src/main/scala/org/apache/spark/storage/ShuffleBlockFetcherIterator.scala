@@ -17,7 +17,7 @@
 
 package org.apache.spark.storage
 
-import java.io.InputStream
+import java.io.{InputStream,StringWriter,PrintWriter}
 import java.util.concurrent.LinkedBlockingQueue
 
 import scala.collection.mutable.{ArrayBuffer, HashSet, Queue}
@@ -231,6 +231,11 @@ final class ShuffleBlockFetcherIterator(
    * track in-memory are the ManagedBuffer references themselves.
    */
   private[this] def fetchLocalBlocks() {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    //val t = new Throwable()
+    //t.printStackTrace(pw)
+    //logInfo(s"Fetching local blocks at: ${sw.toString}")
     val iter = localBlocks.iterator
     while (iter.hasNext) {
       val blockId = iter.next()

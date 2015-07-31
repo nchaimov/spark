@@ -20,6 +20,7 @@ package org.apache.spark.graphx.lib
 import scala.reflect.ClassTag
 import scala.language.postfixOps
 
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.Logging
 import org.apache.spark.graphx._
 
@@ -124,7 +125,7 @@ object PageRank extends Logging {
     var prevRankGraph: Graph[Double, Double] = null
     while (iteration < numIter) {
       currentIteration = iteration
-      rankGraph.cache()
+      rankGraph.persist(StorageLevel.MEMORY_AND_DISK)
 
       // Compute the outgoing rank contributions of each vertex, perform local preaggregation, and
       // do the final aggregation at the receiving vertices. Requires a shuffle for aggregation.
@@ -143,7 +144,7 @@ object PageRank extends Logging {
 
       rankGraph = rankGraph.joinVertices(rankUpdates) {
         (id, oldRank, msgSum) => rPrb(src, id) + (1.0 - resetProb) * msgSum
-      }.cache()
+      }.persist(StorageLevel.MEMORY_AND_DISK)
 
       rankGraph.edges.foreachPartition(x => {}) // also materializes rankGraph.vertices
       logInfo(s"PageRank finished iteration $iteration.")

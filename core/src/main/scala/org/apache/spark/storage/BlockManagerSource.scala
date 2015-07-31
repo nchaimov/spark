@@ -156,4 +156,16 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
     }
   })
 
+  metricRegistry.register(MetricRegistry.name("cacheManager", "partitionsComputed"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getCacheManagerPartitionsComputed
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("cacheManager", "partitionsFound"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.getCacheManagerPartitionsFound
+    }
+  })
+
 }
