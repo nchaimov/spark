@@ -81,6 +81,7 @@ private[spark] class DiskBlockObjectWriter(
    * output bytes written since the latter is expensive to do for each record.
    */
   private var numRecordsWritten = 0
+  private var bytesWritten = 0L
 
   def open(): DiskBlockObjectWriter = {
     if (hasBeenClosed) {
@@ -93,11 +94,13 @@ private[spark] class DiskBlockObjectWriter(
     objOut = serializerInstance.serializeStream(bs)
     initialized = true
     SparkEnv.get.blockManager.incBlockObjectWriterOpenOps
+    logInfo(s"Opening DiskBlockObjectWriter for ${file.toString}")
     this
   }
 
   override def close() {
     if (initialized) {
+      updateBytesWritten()
       Utils.tryWithSafeFinally {
         if (syncWrites) {
           // Force outstanding writes to disk and track how long it takes
@@ -117,6 +120,7 @@ private[spark] class DiskBlockObjectWriter(
       objOut = null
       initialized = false
       hasBeenClosed = true
+      logInfo(s"Closing DiskBlockObjectWriter for ${file.toString}, bytes written = $bytesWritten")
     }
   }
 
@@ -227,6 +231,7 @@ private[spark] class DiskBlockObjectWriter(
   private def updateBytesWritten() {
     val pos = channel.position()
     writeMetrics.incShuffleBytesWritten(pos - reportedPosition)
+    bytesWritten += pos - reportedPosition
     //SparkEnv.get.blockManager.addBlockObjectWriterBytesWritten(pos - reportedPosition)
     reportedPosition = pos
   }
