@@ -78,6 +78,18 @@ class ExecutorSource(threadPool: ThreadPoolExecutor, executorId: String) extends
     registerFileSystemStat(scheme, "metadata_time", _.getMetadataTime(), 0L)
   }
 
+  metricRegistry.register(MetricRegistry.name("memoryStore", "usedMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.memoryStore.usedMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "freeMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.memoryStore.freeMemory
+    }
+  })
+
   metricRegistry.register(MetricRegistry.name("blocks", "requested"), new Gauge[Long] {
     override def getValue: Long = {
       SparkEnv.get.blockManager.getBlocksRequested
@@ -126,5 +138,64 @@ class ExecutorSource(threadPool: ThreadPoolExecutor, executorId: String) extends
     }
   })
 
+  metricRegistry.register(MetricRegistry.name("blocks", "removed"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlocksRemoved
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "bytesPut"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBytesPutInMemoryStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBytesRetrievedFromMemoryStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("diskStore", "bytesPut"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBytesPutInDiskStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("diskStore", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBytesRetrievedFromDiskStore
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("blockObjectWriter", "bytesWritten"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getBlockObjectWriterBytesWritten
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("shuffleBlocks", "bytesRetrieved"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getShuffleBlockBytesRetrieved
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("shuffleBlocks", "cleanOps"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getShuffleCleanOps
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("cacheManager", "partitionsComputed"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getCacheManagerPartitionsComputed
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("cacheManager", "partitionsFound"), new Gauge[Long] {
+    override def getValue: Long = {
+      SparkEnv.get.blockManager.getCacheManagerPartitionsFound
+    }
+  })
 
 }

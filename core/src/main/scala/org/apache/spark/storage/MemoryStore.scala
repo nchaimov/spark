@@ -87,6 +87,7 @@ private[spark] class MemoryStore(blockManager: BlockManager, maxMemory: Long)
 
   /** Free memory not occupied by existing blocks. Note that this does not include unroll memory. */
   def freeMemory: Long = maxMemory - currentMemory
+  def usedMemory: Long = currentMemory
 
   override def getSize(blockId: BlockId): Long = {
     entries.synchronized {

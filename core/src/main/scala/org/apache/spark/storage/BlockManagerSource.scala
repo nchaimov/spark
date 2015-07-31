@@ -60,6 +60,18 @@ private[spark] class BlockManagerSource(val blockManager: BlockManager)
     }
   })
 
+  metricRegistry.register(MetricRegistry.name("memoryStore", "usedMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.memoryStore.usedMemory
+    }
+  })
+
+  metricRegistry.register(MetricRegistry.name("memoryStore", "freeMemory"), new Gauge[Long] {
+    override def getValue: Long = {
+      blockManager.memoryStore.freeMemory
+    }
+  })
+
   metricRegistry.register(MetricRegistry.name("blocks", "requested"), new Gauge[Long] {
     override def getValue: Long = {
       blockManager.getBlocksRequested
