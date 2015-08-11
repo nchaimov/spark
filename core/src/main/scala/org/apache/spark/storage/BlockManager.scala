@@ -293,6 +293,7 @@ private[spark] class BlockManager(
       registerWithExternalShuffleServer()
     }
     logInfo("********* BlockManager initialized")
+    logInfo(s"spark.shuffle.consolidateFiles: ${conf.getBoolean("spark.shuffle.consolidateFiles", false)}")
   }
 
   private def registerWithExternalShuffleServer() {

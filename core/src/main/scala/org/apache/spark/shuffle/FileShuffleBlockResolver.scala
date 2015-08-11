@@ -114,6 +114,7 @@ private[spark] class FileShuffleBlockResolver(conf: SparkConf)
       val openStartTime = System.nanoTime
       val serializerInstance = serializer.newInstance()
       val writers: Array[DiskBlockObjectWriter] = if (consolidateShuffleFiles) {
+        logInfo(s"Consolidate is on for shuffleId $shuffleId, mapId $mapId")
         fileGroup = getUnusedFileGroup()
         Array.tabulate[DiskBlockObjectWriter](numBuckets) { bucketId =>
           val blockId = ShuffleBlockId(shuffleId, mapId, bucketId)
@@ -228,7 +229,9 @@ private[spark] class FileShuffleBlockResolver(conf: SparkConf)
   }
 
   private def physicalFileName(shuffleId: Int, bucketId: Int, fileId: Int) = {
-    "merged_shuffle_%d_%d_%d".format(shuffleId, bucketId, fileId)
+    val x = "merged_shuffle_%d_%d_%d".format(shuffleId, bucketId, fileId)
+    logInfo(s"Generating physical file name for consolidated shuffle: $x")
+    x
   }
 
   private def cleanup(cleanupTime: Long) {

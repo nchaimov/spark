@@ -31,6 +31,9 @@
 
 usage="Usage: spark-daemon.sh [--config <conf-dir>] (start|stop|submit|status) <spark-command> <spark-instance-number> <args...>"
 
+export JAVA_HOME=/home/nchaimov/jdk1.8.0_45
+export PATH="/home/nchaimov/jdk1.8.0_45/bin:$PATH"
+
 # if no args specified, show usage
 if [ $# -le 1 ]; then
   echo $usage

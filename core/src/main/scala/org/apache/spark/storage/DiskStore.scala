@@ -169,6 +169,7 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
     // is different from blockId.name. So the file returns here will not be exist, thus we avoid to
     // delete the whole consolidated file by mistake.
     if (file.exists()) {
+      logInfo(s"Deleting file ${file.toString}")
       file.delete()
     } else {
       false

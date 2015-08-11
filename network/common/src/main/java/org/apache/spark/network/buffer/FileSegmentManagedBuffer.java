@@ -100,7 +100,7 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public InputStream createInputStream() throws IOException {
-    //logger.info("***** >>>> FileSegmentManagedBuffer createInputStream: {}", this.toString());
+    logger.info("***** >>>> FileSegmentManagedBuffer createInputStream: {}", this.toString());
     FileInputStream is = null;
     try {
       is = new FileInputStream(file);

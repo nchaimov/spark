@@ -337,7 +337,7 @@ final class ShuffleBlockFetcherIterator(
 private class BufferReleasingInputStream(
     private val delegate: InputStream,
     private val iterator: ShuffleBlockFetcherIterator)
-  extends InputStream {
+  extends InputStream with Logging {
   private[this] var closed = false
 
   override def read(): Int = delegate.read()

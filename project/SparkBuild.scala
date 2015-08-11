@@ -140,7 +140,7 @@ object SparkBuild extends PomBuild {
     publishMavenStyle := true,
     unidocGenjavadocVersion := "0.9-spark0",
 
-    resolvers += Resolver.mavenLocal,
+    resolvers := Resolver.mavenLocal +: resolvers.value,
     otherResolvers <<= SbtPomKeys.mvnLocalRepository(dotM2 => Seq(Resolver.file("dotM2", dotM2))),
     publishLocalConfiguration in MavenCompile <<= (packagedArtifacts, deliverLocal, ivyLoggingLevel) map {
       (arts, _, level) => new PublishConfiguration(None, "dotM2", arts, Seq(), level)
