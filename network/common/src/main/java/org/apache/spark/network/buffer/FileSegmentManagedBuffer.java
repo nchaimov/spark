@@ -100,11 +100,13 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public InputStream createInputStream() throws IOException {
-    logger.info("FileSegmentManagedBuffer createInputStream: {}", this.toString());
+    long start = System.nanoTime();
     FileInputStream is = null;
     try {
       is = new FileInputStream(file);
       ByteStreams.skipFully(is, offset);
+      long elapsed = System.nanoTime() - start;
+      logger.info("FileSegmentManagedBuffer createInputStream: {} in {}", this.toString(), elapsed);
       return new LimitedInputStream(is, length);
     } catch (IOException e) {
       try {
