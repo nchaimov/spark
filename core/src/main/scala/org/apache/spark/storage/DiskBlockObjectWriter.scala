@@ -25,6 +25,7 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{SerializerInstance, SerializationStream}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.util.Utils
+import org.apache.spark.util.instrumentation._
 
 /**
  * A class for writing JVM objects directly to a file on disk. This class allows data to be appended
@@ -50,7 +51,7 @@ private[spark] class DiskBlockObjectWriter(
   /** The file channel, used for repositioning / truncating the file. */
   private var channel: FileChannel = null
   private var bs: OutputStream = null
-  private var fos: FileOutputStream = null
+  private var fos: InstrumentedFileOutputStream = null
   private var ts: TimeTrackingOutputStream = null
   private var objOut: SerializationStream = null
   private var initialized = false
@@ -88,7 +89,7 @@ private[spark] class DiskBlockObjectWriter(
     if (hasBeenClosed) {
       throw new IllegalStateException("Writer already closed. Cannot be reopened.")
     }
-    fos = new FileOutputStream(file, true)
+    fos = new InstrumentedFileOutputStream(file, true)
     ts = new TimeTrackingOutputStream(writeMetrics, fos)
     channel = fos.getChannel()
     bs = compressStream(new BufferedOutputStream(ts, bufferSize))
@@ -169,7 +170,7 @@ private[spark] class DiskBlockObjectWriter(
         close()
       }
 
-      val truncateStream = new FileOutputStream(file, true)
+      val truncateStream = new InstrumentedFileOutputStream(file, true)
       try {
         truncateStream.getChannel.truncate(initialPosition)
       } finally {

@@ -31,6 +31,7 @@ import org.apache.spark.serializer._
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.shuffle.sort.{SortShuffleFileWriter, SortShuffleWriter}
 import org.apache.spark.storage.{BlockId, DiskBlockObjectWriter}
+import org.apache.spark.util.instrumentation._
 
 /**
  * Sorts and potentially merges a number of key-value pairs of type (K, V) to produce key-combiner
@@ -488,7 +489,7 @@ private[spark] class ExternalSorter[K, V, C](
 
     // Intermediate file and deserializer streams that read from exactly one batch
     // This guards against pre-fetching and other arbitrary behavior of higher level streams
-    var fileStream: FileInputStream = null
+    var fileStream: InstrumentedFileInputStream = null
     var deserializeStream = nextBatchStream()  // Also sets fileStream
 
     var nextItem: (K, C) = null
@@ -507,7 +508,7 @@ private[spark] class ExternalSorter[K, V, C](
         }
 
         val start = batchOffsets(batchId)
-        fileStream = new FileInputStream(spill.file)
+        fileStream = new InstrumentedFileInputStream(spill.file)
         fileStream.getChannel.position(start)
         batchId += 1
 

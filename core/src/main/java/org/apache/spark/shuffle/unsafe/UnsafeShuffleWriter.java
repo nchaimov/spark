@@ -55,6 +55,7 @@ import org.apache.spark.storage.BlockManager;
 import org.apache.spark.storage.TimeTrackingOutputStream;
 import org.apache.spark.unsafe.PlatformDependent;
 import org.apache.spark.unsafe.memory.TaskMemoryManager;
+import org.apache.spark.util.instrumentation.*;
 
 @Private
 public class UnsafeShuffleWriter<K, V> extends ShuffleWriter<K, V> {
@@ -269,7 +270,7 @@ public class UnsafeShuffleWriter<K, V> extends ShuffleWriter<K, V> {
       !compressionEnabled || compressionCodec instanceof LZFCompressionCodec;
     try {
       if (spills.length == 0) {
-        new FileOutputStream(outputFile).close(); // Create an empty file
+        new InstrumentedFileOutputStream(outputFile).close(); // Create an empty file
         return new long[partitioner.numPartitions()];
       } else if (spills.length == 1) {
         // Here, we don't need to perform any metrics updates because the bytes written to this
@@ -339,18 +340,18 @@ public class UnsafeShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     assert (spills.length >= 2);
     final int numPartitions = partitioner.numPartitions();
     final long[] partitionLengths = new long[numPartitions];
-    final InputStream[] spillInputStreams = new FileInputStream[spills.length];
+    final InputStream[] spillInputStreams = new InstrumentedFileInputStream[spills.length];
     OutputStream mergedFileOutputStream = null;
 
     boolean threwException = true;
     try {
       for (int i = 0; i < spills.length; i++) {
-        spillInputStreams[i] = new FileInputStream(spills[i].file);
+        spillInputStreams[i] = new InstrumentedFileInputStream(spills[i].file);
       }
       for (int partition = 0; partition < numPartitions; partition++) {
         final long initialFileLength = outputFile.length();
         mergedFileOutputStream =
-          new TimeTrackingOutputStream(writeMetrics, new FileOutputStream(outputFile, true));
+          new TimeTrackingOutputStream(writeMetrics, new InstrumentedFileOutputStream(outputFile, true));
         if (compressionCodec != null) {
           mergedFileOutputStream = compressionCodec.compressedOutputStream(mergedFileOutputStream);
         }
@@ -400,11 +401,11 @@ public class UnsafeShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     boolean threwException = true;
     try {
       for (int i = 0; i < spills.length; i++) {
-        spillInputChannels[i] = new FileInputStream(spills[i].file).getChannel();
+        spillInputChannels[i] = new InstrumentedFileInputStream(spills[i].file).getChannel();
       }
       // This file needs to opened in append mode in order to work around a Linux kernel bug that
       // affects transferTo; see SPARK-3948 for more details.
-      mergedFileOutputChannel = new FileOutputStream(outputFile, true).getChannel();
+      mergedFileOutputChannel = new InstrumentedFileOutputStream(outputFile, true).getChannel();
 
       long bytesWrittenToMergedFile = 0;
       for (int partition = 0; partition < numPartitions; partition++) {

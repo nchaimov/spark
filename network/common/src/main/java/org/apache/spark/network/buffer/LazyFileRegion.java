@@ -28,6 +28,7 @@ import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
 
 import org.apache.spark.network.util.JavaUtils;
+import org.apache.spark.util.instrumentation.InstrumentedFileInputStream;
 
 /**
  * A FileRegion implementation that only creates the file descriptor when the region is being
@@ -82,7 +83,7 @@ public final class LazyFileRegion extends AbstractReferenceCounted implements Fi
   @Override
   public long transferTo(WritableByteChannel target, long position) throws IOException {
     if (channel == null) {
-      channel = new FileInputStream(file).getChannel();
+      channel = new InstrumentedFileInputStream(file).getChannel();
     }
 
     long count = this.count - position;

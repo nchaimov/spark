@@ -35,6 +35,8 @@ import io.netty.channel.DefaultFileRegion;
 import org.apache.spark.network.util.JavaUtils;
 import org.apache.spark.network.util.LimitedInputStream;
 import org.apache.spark.network.util.TransportConf;
+import org.apache.spark.util.instrumentation.InstrumentedFileInputStream;
+import org.apache.spark.util.instrumentation.InstrumentedFileOutputStream;
 
 /**
  * A {@link ManagedBuffer} backed by a segment in a file.
@@ -101,9 +103,9 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
   @Override
   public InputStream createInputStream() throws IOException {
     long start = System.nanoTime();
-    FileInputStream is = null;
+    InstrumentedFileInputStream is = null;
     try {
-      is = new FileInputStream(file);
+      is = new InstrumentedFileInputStream(file);
       ByteStreams.skipFully(is, offset);
       long elapsed = System.nanoTime() - start;
       logger.info("FileSegmentManagedBuffer createInputStream: {} in {}", this.toString(), elapsed);

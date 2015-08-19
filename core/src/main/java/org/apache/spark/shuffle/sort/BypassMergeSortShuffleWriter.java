@@ -38,6 +38,7 @@ import org.apache.spark.serializer.Serializer;
 import org.apache.spark.serializer.SerializerInstance;
 import org.apache.spark.storage.*;
 import org.apache.spark.util.Utils;
+import org.apache.spark.util.instrumentation.*;
 
 /**
  * This class implements sort-based shuffle's hash-style shuffle fallback path. This write path
@@ -138,12 +139,12 @@ final class BypassMergeSortShuffleWriter<K, V> implements SortShuffleFileWriter<
       return lengths;
     }
 
-    final FileOutputStream out = new FileOutputStream(outputFile, true);
+    final InstrumentedFileOutputStream out = new InstrumentedFileOutputStream(outputFile, true);
     final long writeStartTime = System.nanoTime();
     boolean threwException = true;
     try {
       for (int i = 0; i < numPartitions; i++) {
-        final FileInputStream in = new FileInputStream(partitionWriters[i].fileSegment().file());
+        final InstrumentedFileInputStream in = new InstrumentedFileInputStream(partitionWriters[i].fileSegment().file());
         boolean copyThrewException = true;
         try {
           lengths[i] = Utils.copyStream(in, out, false, transferToEnabled);

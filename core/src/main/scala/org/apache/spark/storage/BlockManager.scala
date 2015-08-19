@@ -42,6 +42,7 @@ import org.apache.spark.serializer.{SerializerInstance, Serializer}
 import org.apache.spark.shuffle.ShuffleManager
 import org.apache.spark.shuffle.hash.HashShuffleManager
 import org.apache.spark.util._
+import org.apache.spark.util.instrumentation._
 
 private[spark] sealed trait BlockValues
 private[spark] case class ByteBufferValues(buffer: ByteBuffer) extends BlockValues
@@ -1355,6 +1356,9 @@ private[spark] class BlockManager(
     logInfo(s"Number of blocks dropped to disk: ${getBlocksDroppedToDisk}")
     logInfo(s"Number of blocks removed : ${getBlocksRemoved}")
     logInfo(s"Number of blocks not attempted : ${getBlocksNotAttempted}")
+
+    logInfo(s"File I/O stats:\n ${FileStreamStatistics.asString}")
+
     logInfo("BlockManager stopped")
   }
 }

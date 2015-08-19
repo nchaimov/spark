@@ -32,6 +32,7 @@ import org.apache.spark.serializer.{DeserializationStream, Serializer}
 import org.apache.spark.storage.{BlockId, BlockManager}
 import org.apache.spark.util.collection.ExternalAppendOnlyMap.HashComparator
 import org.apache.spark.executor.ShuffleWriteMetrics
+import org.apache.spark.util.instrumentation._
 
 /**
  * :: DeveloperApi ::
@@ -392,7 +393,7 @@ class ExternalAppendOnlyMap[K, V, C](
     )
 
     private var batchIndex = 0  // Which batch we're in
-    private var fileStream: FileInputStream = null
+    private var fileStream: InstrumentedFileInputStream = null
 
     // An intermediate stream that reads from exactly one batch
     // This guards against pre-fetching and other arbitrary behavior of higher level streams
@@ -415,7 +416,7 @@ class ExternalAppendOnlyMap[K, V, C](
         }
 
         val start = batchOffsets(batchIndex)
-        fileStream = new FileInputStream(file)
+        fileStream = new InstrumentedFileInputStream(file)
         fileStream.getChannel.position(start)
         batchIndex += 1
 

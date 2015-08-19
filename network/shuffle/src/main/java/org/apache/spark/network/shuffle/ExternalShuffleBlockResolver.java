@@ -39,6 +39,7 @@ import org.apache.spark.network.shuffle.protocol.ExecutorShuffleInfo;
 import org.apache.spark.network.util.JavaUtils;
 import org.apache.spark.network.util.NettyUtils;
 import org.apache.spark.network.util.TransportConf;
+import org.apache.spark.util.instrumentation.*;
 
 /**
  * Manages converting shuffle BlockIds into physical segments of local files, from a process outside
@@ -189,7 +190,7 @@ public class ExternalShuffleBlockResolver {
 
     DataInputStream in = null;
     try {
-      in = new DataInputStream(new FileInputStream(indexFile));
+      in = new DataInputStream(new InstrumentedFileInputStream(indexFile));
       in.skipBytes(reduceId * 8);
       long offset = in.readLong();
       long nextOffset = in.readLong();

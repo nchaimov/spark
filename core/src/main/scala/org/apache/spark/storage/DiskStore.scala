@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import org.apache.spark.Logging
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.util.Utils
+import org.apache.spark.util.instrumentation._
 
 /**
  * Stores BlockManager blocks on disk.
@@ -51,7 +52,7 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
     logDebug(s"Attempting to put block $blockId")
     val startTime = System.currentTimeMillis
     val file = diskManager.getFile(blockId)
-    val channel = new FileOutputStream(file).getChannel
+    val channel = new InstrumentedFileOutputStream(file).getChannel
     Utils.tryWithSafeFinally {
       while (bytes.remaining > 0) {
         channel.write(bytes)
@@ -83,7 +84,7 @@ private[spark] class DiskStore(blockManager: BlockManager, diskManager: DiskBloc
     logDebug(s"Attempting to write values for block $blockId")
     val startTime = System.currentTimeMillis
     val file = diskManager.getFile(blockId)
-    val outputStream = new FileOutputStream(file)
+    val outputStream = new InstrumentedFileOutputStream(file)
     try {
       Utils.tryWithSafeFinally {
         blockManager.dataSerializeStream(blockId, outputStream, values)
