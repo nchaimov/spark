@@ -19,7 +19,7 @@ package org.apache.spark.sql.ui
 
 import scala.collection.mutable
 
-import com.google.common.annotations.VisibleForTesting
+//import com.google.common.annotations.VisibleForTesting
 
 import org.apache.spark.{AccumulatorParam, JobExecutionStatus, Logging}
 import org.apache.spark.executor.TaskMetrics
@@ -52,17 +52,17 @@ private[sql] class SQLListener(sqlContext: SQLContext) extends SparkListener wit
 
   private val completedExecutions = mutable.ListBuffer[SQLExecutionUIData]()
 
-  @VisibleForTesting
+  //@VisibleForTesting
   def executionIdToData: Map[Long, SQLExecutionUIData] = synchronized {
     _executionIdToData.toMap
   }
 
-  @VisibleForTesting
+  //@VisibleForTesting
   def jobIdToExecutionId: Map[Long, Long] = synchronized {
     _jobIdToExecutionId.toMap
   }
 
-  @VisibleForTesting
+  //@VisibleForTesting
   def stageIdToStageMetrics: Map[Long, SQLStageMetrics] = synchronized {
     _stageIdToStageMetrics.toMap
   }
