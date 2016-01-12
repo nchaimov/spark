@@ -171,6 +171,7 @@
     <commons-lang2.version>2.6</commons-lang2.version>
     <!-- org.apache.commons/commons-lang3/-->
     <commons-lang3.version>3.3.2</commons-lang3.version>
+    <commons-pool2.version>2.4.2</commons-pool2.version>
     <datanucleus-core.version>3.2.10</datanucleus-core.version>
     <janino.version>2.7.8</janino.version>
     <jersey.version>1.9</jersey.version>
@@ -333,6 +334,11 @@
          This is needed by the scalatest plugin, and so is declared here to be available in
          all child modules, just as scalatest is run in all children
     -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-pool2</artifactId>
+        <version>${commons-pool2.version}</version>
+      </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
