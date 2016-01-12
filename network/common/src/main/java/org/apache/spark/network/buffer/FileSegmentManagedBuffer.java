@@ -102,13 +102,13 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public InputStream createInputStream() throws IOException {
-    long start = System.nanoTime();
+    //long start = System.nanoTime();
     InstrumentedFileInputStream is = null;
     try {
       is = new InstrumentedFileInputStream(file);
       ByteStreams.skipFully(is, offset);
-      long elapsed = System.nanoTime() - start;
-      logger.info("FileSegmentManagedBuffer createInputStream: {} in {}", this.toString(), elapsed);
+      //long elapsed = System.nanoTime() - start;
+      //logger.info("FileSegmentManagedBuffer createInputStream: {} in {}", this.toString(), elapsed);
       return new LimitedInputStream(is, length);
     } catch (IOException e) {
       try {
@@ -143,7 +143,7 @@ public final class FileSegmentManagedBuffer extends ManagedBuffer {
 
   @Override
   public Object convertToNetty() throws IOException {
-    logger.info("FileSegmentManagedBuffer convertToNetty: {}", this.toString());
+    //logger.info("FileSegmentManagedBuffer convertToNetty: {}", this.toString());
     if (conf.lazyFileDescriptor()) {
       return new LazyFileRegion(file, offset, length);
     } else {

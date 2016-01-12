@@ -85,7 +85,7 @@ private[spark] class DiskBlockObjectWriter(
   private var bytesWritten = 0L
 
   def open(): DiskBlockObjectWriter = {
-    val start = System.nanoTime
+    //val start = System.nanoTime
     if (hasBeenClosed) {
       throw new IllegalStateException("Writer already closed. Cannot be reopened.")
     }
@@ -96,13 +96,13 @@ private[spark] class DiskBlockObjectWriter(
     objOut = serializerInstance.serializeStream(bs)
     initialized = true
     SparkEnv.get.blockManager.incBlockObjectWriterOpenOps
-    val elapsed = System.nanoTime - start
-    logInfo(s"Opening DiskBlockObjectWriter for ${file.toString} in ${elapsed}")
+    //val elapsed = System.nanoTime - start
+    //logInfo(s"Opening DiskBlockObjectWriter for ${file.toString} in ${elapsed}")
     this
   }
 
   override def close() {
-    val start = System.nanoTime
+    //val start = System.nanoTime
     if (initialized) {
       updateBytesWritten()
       Utils.tryWithSafeFinally {
@@ -124,8 +124,8 @@ private[spark] class DiskBlockObjectWriter(
       objOut = null
       initialized = false
       hasBeenClosed = true
-      val elapsed = System.nanoTime - start
-      logInfo(s"Closing DiskBlockObjectWriter for ${file.toString}, bytes written = $bytesWritten in $elapsed")
+      //val elapsed = System.nanoTime - start
+      //logInfo(s"Closing DiskBlockObjectWriter for ${file.toString}, bytes written = $bytesWritten in $elapsed")
     }
   }
 
