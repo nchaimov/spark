@@ -56,7 +56,6 @@ public class FileStreamStatistics {
     private static ConcurrentMap<String, PerFileStatistics> perFileStatistics =
             new ConcurrentHashMap<String, PerFileStatistics>();
 
-
     private static String ensureStatsExist(String path) {
         if (path == null) {
             path = "<NO FILENAME>";

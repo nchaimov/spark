@@ -97,7 +97,7 @@ private[spark] class DiskBlockObjectWriter(
     initialized = true
     SparkEnv.get.blockManager.incBlockObjectWriterOpenOps
     val elapsed = System.nanoTime - start
-    logInfo(s"Opening DiskBlockObjectWriter for ${file.toString} in ${elapsed}")
+    //logInfo(s"Opening DiskBlockObjectWriter for ${file.toString} in ${elapsed}")
     this
   }
 
@@ -125,7 +125,7 @@ private[spark] class DiskBlockObjectWriter(
       initialized = false
       hasBeenClosed = true
       val elapsed = System.nanoTime - start
-      logInfo(s"Closing DiskBlockObjectWriter for ${file.toString}, bytes written = $bytesWritten in $elapsed")
+      //logInfo(s"Closing DiskBlockObjectWriter for ${file.toString}, bytes written = $bytesWritten in $elapsed")
     }
   }
 
