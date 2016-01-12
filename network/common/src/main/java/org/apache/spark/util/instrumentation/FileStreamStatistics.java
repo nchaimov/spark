@@ -4,7 +4,6 @@ package org.apache.spark.util.instrumentation;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -15,6 +14,10 @@ public class FileStreamStatistics {
     private static LongAdder fileOutputStreamOpenCalls = new LongAdder();
     private static LongAdder fileInputStreamCloseCalls = new LongAdder();
     private static LongAdder fileOutputStreamCloseCalls = new LongAdder();
+    private static LongAdder fileInputStreamActualOpens = new LongAdder();
+    private static LongAdder fileOutputStreamActualOpens = new LongAdder();
+    private static LongAdder fileInputStreamActualCloses = new LongAdder();
+    private static LongAdder fileOutputStreamActualCloses = new LongAdder();
     private static LongAdder fileInputStreamOpenTime = new LongAdder();
     private static LongAdder fileOutputStreamOpenTime = new LongAdder();
     private static LongAdder fileInputStreamReadCalls = new LongAdder();
@@ -27,6 +30,10 @@ public class FileStreamStatistics {
         public LongAdder inputCloses = new LongAdder();
         public LongAdder outputOpens = new LongAdder();
         public LongAdder outputCloses = new LongAdder();
+        public LongAdder inputActualOpens = new LongAdder();
+        public LongAdder inputActualCloses = new LongAdder();
+        public LongAdder outputActualOpens = new LongAdder();
+        public LongAdder outputActualCloses = new LongAdder();
         public LongAdder reads = new LongAdder();
         public LongAdder writes = new LongAdder();
         public LongAdder cumulativeInputOpenTime = new LongAdder();
@@ -35,12 +42,13 @@ public class FileStreamStatistics {
         public LongAdder cumulativeWriteTime = new LongAdder();
 
         public static String getHeader() {
-            return "inputOpens,inputCloses,outputOpens,outputCloses,inputOpenTime,outputOpenTime,reads,readTime,writes,writeTime";
+            return "inputOpens,inputCloses,outputOpens,outputCloses,inputActualOpens,inputActualCloses,outputActualOpens,outputActualCloses,inputOpenTime,outputOpenTime,reads,readTime,writes,writeTime";
         }
 
         public String toString() {
-            return String.format("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", inputOpens.sum(), inputCloses.sum(),
-                    outputOpens.sum(), outputCloses.sum(), cumulativeInputOpenTime.sum(),
+            return String.format("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", inputOpens.sum(), inputCloses.sum(),
+                    outputOpens.sum(), outputCloses.sum(), inputActualOpens.sum(), inputActualCloses.sum(),
+                    outputActualOpens.sum(), outputActualCloses.sum(), cumulativeInputOpenTime.sum(),
                     cumulativeOutputOpenTime.sum(), reads.sum(), cumulativeReadTime.sum(),
                     writes.sum(), cumulativeWriteTime.sum());
         }
@@ -70,6 +78,19 @@ public class FileStreamStatistics {
     }
 
     @SuppressWarnings( "unused" )
+    public static void actuallyOpenedInputFile(String path) {
+        fileInputStreamActualOpens.increment();
+        path = ensureStatsExist(path);
+        PerFileStatistics pf = perFileStatistics.get(path);
+        pf.inputActualOpens.increment();
+    }
+
+    @SuppressWarnings( "unused" )
+    public static void closedInputFile(String path) {
+        closedInputFile(path, false);
+    }
+
+    @SuppressWarnings( "unused" )
     public static void closedInputFile(String path, boolean closed) {
         if(closed) {
             return;
@@ -80,8 +101,10 @@ public class FileStreamStatistics {
     }
 
     @SuppressWarnings( "unused" )
-    public static void closedInputFile(String path) {
-        closedInputFile(path, false);
+    public static void actuallyClosedInputFile(String path) {
+        fileInputStreamActualCloses.increment();
+        path = ensureStatsExist(path);
+        perFileStatistics.get(path).inputActualCloses.increment();
     }
 
     @SuppressWarnings( "unused" )
@@ -95,6 +118,18 @@ public class FileStreamStatistics {
     }
 
     @SuppressWarnings( "unused" )
+    public static void actuallyOpenedOutputFile(String path) {
+        fileOutputStreamActualOpens.increment();
+        path = ensureStatsExist(path);
+        perFileStatistics.get(path).outputActualOpens.increment();
+    }
+
+    @SuppressWarnings( "unused" )
+    public static void closedOutputFile(String path) {
+        closedOutputFile(path, false);
+    }
+
+    @SuppressWarnings( "unused" )
     public static void closedOutputFile(String path, boolean closed) {
         if(closed) {
             return;
@@ -105,8 +140,10 @@ public class FileStreamStatistics {
     }
 
     @SuppressWarnings( "unused" )
-    public static void closedOutputFile(String path) {
-        closedOutputFile(path, false);
+    public static void actuallyClosedOutputFile(String path) {
+        fileOutputStreamActualCloses.increment();
+        path = ensureStatsExist(path);
+        perFileStatistics.get(path).outputActualCloses.increment();
     }
 
     @SuppressWarnings( "unused" )
@@ -135,12 +172,16 @@ public class FileStreamStatistics {
         for (Map.Entry<String, PerFileStatistics> entry : perFileStatistics.entrySet()) {
             sb.append(String.format("\"%s\",%s\n", entry.getKey(), entry.getValue().toString()));
         }
-        sb.append(String.format("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        sb.append(String.format("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
                 "<TOTAL>",
                 fileInputStreamOpenCalls.sum(),
                 fileInputStreamCloseCalls.sum(),
                 fileOutputStreamOpenCalls.sum(),
                 fileOutputStreamCloseCalls.sum(),
+                fileInputStreamActualOpens.sum(),
+                fileInputStreamActualCloses.sum(),
+                fileOutputStreamActualOpens.sum(),
+                fileOutputStreamActualCloses.sum(),
                 fileInputStreamOpenTime.sum(),
                 fileOutputStreamOpenTime.sum(),
                 fileInputStreamReadCalls.sum(),
