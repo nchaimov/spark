@@ -184,6 +184,10 @@ public class InstrumentedFileOutputStream extends OutputStream {
         return wrappedStream.getChannel();
     }
 
+    public FileDescriptor getFD() throws IOException {
+        return wrappedStream.getFD();
+    }
+
     @Override
     public void flush() throws IOException {
         if(closed) {

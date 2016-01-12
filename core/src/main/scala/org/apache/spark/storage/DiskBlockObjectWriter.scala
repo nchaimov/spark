@@ -115,6 +115,7 @@ private[spark] class DiskBlockObjectWriter(
         }
       } {
         objOut.close()
+        fos.close()
       }
 
       channel = null
