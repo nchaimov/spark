@@ -168,7 +168,8 @@ def determine_java_version(java_exe):
     raw_version_str = next(x for x in raw_output_lines if " version " in x)
 
     version_str = raw_version_str.split()[-1].strip('"')  # eg '1.8.0_25'
-    version, update = version_str.split('_')  # eg ['1.8.0', '25']
+    version_str_x = version_str.split('-')[0]
+    version, update = version_str_x.split('_')  # eg ['1.8.0', '25']
 
     # map over the values and convert them to integers
     version_info = [int(x) for x in version.split('.') + [update]]

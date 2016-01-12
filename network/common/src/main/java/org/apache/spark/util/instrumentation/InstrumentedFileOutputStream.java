@@ -11,12 +11,28 @@ import java.nio.channels.FileChannel;
  */
 public class InstrumentedFileOutputStream extends OutputStream {
 
+    private static int limit = 10000;
 
-    private static KeyedObjectPool<File, FileOutputStream> regularPool =
+    private static GenericKeyedObjectPool<File, FileOutputStream> regularPool =
             new GenericKeyedObjectPool<File, FileOutputStream>(new FileOutputStreamFactory());
 
-    private static KeyedObjectPool<File, FileOutputStream> appendingPool =
+    private static GenericKeyedObjectPool<File, FileOutputStream> appendingPool =
             new GenericKeyedObjectPool<File, FileOutputStream>(new AppendingFileOutputStreamFactory());
+
+    static {
+        regularPool.setMaxTotal(-1);
+        regularPool.setMaxTotalPerKey(-1);
+        regularPool.setMaxIdlePerKey(-1);
+        regularPool.setMinIdlePerKey(-1);
+    }
+
+    static {
+        appendingPool.setMaxTotal(-1);
+        appendingPool.setMaxTotalPerKey(-1);
+        appendingPool.setMaxIdlePerKey(-1);
+        appendingPool.setMinIdlePerKey(-1);
+    }
+
 
     protected final FileOutputStream wrappedStream;
     protected final String path;
@@ -25,10 +41,24 @@ public class InstrumentedFileOutputStream extends OutputStream {
     protected final boolean isBorrowed;
     protected final boolean isAppending;
 
+     public static void checkPool() {
+        int rpa = regularPool.getNumActive();
+        int rpi = regularPool.getNumIdle();
+        int apa = appendingPool.getNumActive();
+        int api = appendingPool.getNumIdle();
+        if(rpa + rpi > limit) {
+            regularPool.clearOldest();
+        }
+        if(apa + api > limit) {
+            appendingPool.clearOldest();
+        }
+    }   
+
     public InstrumentedFileOutputStream(String name) throws FileNotFoundException {
         path = name;
         long start = System.nanoTime();
         myFile = new File(name);
+        checkPool();
         try {
             wrappedStream = regularPool.borrowObject(myFile);
         } catch (Exception e) {
@@ -45,6 +75,7 @@ public class InstrumentedFileOutputStream extends OutputStream {
         path = name;
         long start = System.nanoTime();
         myFile = new File(name);
+        checkPool();
         if(append) {
             try {
                 wrappedStream = appendingPool.borrowObject(myFile);
@@ -71,6 +102,7 @@ public class InstrumentedFileOutputStream extends OutputStream {
         path = (file != null ? file.getPath() : null);
         long start = System.nanoTime();
         myFile = file;
+        checkPool();
         try {
             wrappedStream = regularPool.borrowObject(myFile);
         } catch (Exception e) {
@@ -87,6 +119,7 @@ public class InstrumentedFileOutputStream extends OutputStream {
         path = (file != null ? file.getPath() : null);
         long start = System.nanoTime();
         myFile = file;
+        checkPool();
         if(append) {
             try {
                 wrappedStream = appendingPool.borrowObject(myFile);
@@ -156,6 +189,7 @@ public class InstrumentedFileOutputStream extends OutputStream {
     @Override
     public void close() throws IOException {
         if(!closed) {
+            flush();
             closed = true;
             if(isBorrowed) {
                 if(isAppending) {

@@ -61,9 +61,9 @@ object Analytics extends Logging {
     val partitionStrategy: Option[PartitionStrategy] = options.remove("partStrategy")
       .map(PartitionStrategy.fromString(_))
     val edgeStorageLevel = options.remove("edgeStorageLevel")
-      .map(StorageLevel.fromString(_)).getOrElse(StorageLevel.MEMORY_ONLY)
+      .map(StorageLevel.fromString(_)).getOrElse(StorageLevel.MEMORY_AND_DISK)
     val vertexStorageLevel = options.remove("vertexStorageLevel")
-      .map(StorageLevel.fromString(_)).getOrElse(StorageLevel.MEMORY_ONLY)
+      .map(StorageLevel.fromString(_)).getOrElse(StorageLevel.MEMORY_AND_DISK)
 
     taskType match {
       case "pagerank" =>
@@ -84,7 +84,7 @@ object Analytics extends Logging {
         val unpartitionedGraph = GraphLoader.edgeListFile(sc, fname,
           numEdgePartitions = numEPart,
           edgeStorageLevel = edgeStorageLevel,
-          vertexStorageLevel = vertexStorageLevel).cache()
+          vertexStorageLevel = vertexStorageLevel).persist(StorageLevel.MEMORY_AND_DISK)
         val graph = partitionStrategy.foldLeft(unpartitionedGraph)(_.partitionBy(_))
 
         println("GRAPHX: Number of vertices " + graph.vertices.count)
@@ -93,7 +93,7 @@ object Analytics extends Logging {
         val pr = (numIterOpt match {
           case Some(numIter) => PageRank.run(graph, numIter)
           case None => PageRank.runUntilConvergence(graph, tol)
-        }).vertices.cache()
+        }).vertices.persist(StorageLevel.MEMORY_AND_DISK)
 
         println("GRAPHX: Total rank: " + pr.map(_._2).reduce(_ + _))
 

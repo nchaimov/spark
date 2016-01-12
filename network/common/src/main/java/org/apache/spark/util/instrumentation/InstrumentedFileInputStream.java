@@ -11,8 +11,17 @@ import java.nio.channels.FileChannel;
  */
 public class InstrumentedFileInputStream extends InputStream {
 
-    private static KeyedObjectPool<File, FileInputStream> pool =
+    private static int limit = 10000;
+
+    private static GenericKeyedObjectPool<File, FileInputStream> pool =
             new GenericKeyedObjectPool<File, FileInputStream>(new FileInputStreamFactory());
+
+    static {
+        pool.setMaxTotal(-1);
+        pool.setMaxTotalPerKey(-1);
+        pool.setMaxIdlePerKey(-1);
+        pool.setMinIdlePerKey(-1);
+    }
 
     protected final FileInputStream wrappedStream;
     protected final boolean isBorrowed;
@@ -20,10 +29,19 @@ public class InstrumentedFileInputStream extends InputStream {
     protected final File myFile;
     protected boolean closed = false;
 
+    public static void checkPool() {
+        int pa = pool.getNumActive();
+        int pi = pool.getNumIdle();
+        if(pa + pi > limit) {
+            pool.clearOldest();
+        }
+    }
+
     public InstrumentedFileInputStream(String name) throws FileNotFoundException {
         path = name;
         long start = System.nanoTime();
         myFile = new File(name);
+        checkPool();
         try {
             wrappedStream = pool.borrowObject(myFile);
         } catch (Exception e) {
@@ -39,6 +57,7 @@ public class InstrumentedFileInputStream extends InputStream {
         path = (file != null ? file.getPath() : null);
         long start = System.nanoTime();
         myFile = file;
+        checkPool();
         try {
             wrappedStream = pool.borrowObject(file);
         } catch (Exception e) {
