@@ -23,14 +23,18 @@ export SPARK_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 . "$SPARK_HOME"/bin/load-spark-env.sh
 
 # Find the java binary
-if [ -n "${JAVA_HOME}" ]; then
-  RUNNER="${JAVA_HOME}/bin/java"
+if [ -n "${SPARK_LAUNCHER_JAVA_BIN}" ]; then
+  RUNNER="${SPARK_LAUNCHER_JAVA_BIN}"
 else
-  if [ `command -v java` ]; then
-    RUNNER="java"
+  if [ -n "${JAVA_HOME}" ]; then
+    RUNNER="${JAVA_HOME}/bin/java"
   else
-    echo "JAVA_HOME is not set" >&2
-    exit 1
+    if [ `command -v java` ]; then
+      RUNNER="java"
+    else
+      echo "JAVA_HOME is not set" >&2
+      exit 1
+    fi
   fi
 fi
 
