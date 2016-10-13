@@ -172,7 +172,7 @@ run_command() {
     sleep 0.5
   done
 
-  sleep 2
+  sleep 5
   # Check if the process has died; in that case we'll tail the log so the user can see
   if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
     echo "failed to launch $command:"
